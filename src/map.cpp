@@ -4,7 +4,7 @@ Map * Map::m_map;
 // Constructeurs
 // *************
 
-Map::Map() : m_w(),m_h(),m_sommets(), m_terrains(), m_agents(), m_unites(), m_contraintes()
+Map::Map() : m_w(),m_h(),m_sommets(), m_terrains(), m_agents(), m_unites(), m_contraintes(), m_changedPresident(false),m_PSommets()
 {
 
 }
@@ -606,6 +606,48 @@ const std::vector< std::pair< bool,bool>*> Map::A_star_GA(unsigned int id, unsig
   return chemin; // On retourne le chemin
 }
 
+
+void Map::changedPresident(std::vector<std::vector<int>> _dep)
+{
+  m_PSommets = _dep;
+  std::cout << "Nouveau président :" << std::endl;
+  for(std::vector<std::vector<int>>::const_iterator it = _dep.begin(); it!= _dep.end(); ++it)
+  {
+    std::cout << "Minion :" << std::endl;
+    for(std::vector<int>::const_iterator it2 = (*it).begin(); it2 != (*it).end(); ++it2)
+    {
+      std::cout << (*it2) << " | ";
+    }
+    std::cout << std::endl << std::endl;
+  }
+  m_changedPresident = true;
+}
+
+
+const std::map< int, Case* >* Map::get_sommets() const
+{
+  return &m_sommets;
+}
+
+
+const std::vector<std::vector<int>>* Map::get_changedPresident() const
+{
+  return &m_PSommets;
+}
+
+
+void Map::set_changed(bool b)
+{
+  m_changedPresident = b;
+}
+
+
+bool Map::isChanged() const
+{
+  return m_changedPresident;
+}
+
+
 // Fonction pour trouver un chemin vers une case cible pour un agent avec un algorithme génétique
 void Map::create_algogen(unsigned int id, unsigned int idCible, const Unite* unite)
 {
@@ -615,7 +657,7 @@ void Map::create_algogen(unsigned int id, unsigned int idCible, const Unite* uni
 	float manhattan = 0.8;
 	float mutaRatio = 0.05;
 	float popToMutate = 1;
- 	unsigned int nbAjouts = 5;
+ 	unsigned int nbAjouts = 100;
 	float ratioSupprs = 0.1;
 	float ratioModifs = 0.1;
 	float ratioElitism = 0.05;
@@ -644,7 +686,7 @@ void Map::create_algogen(unsigned int id, unsigned int idCible, const Unite* uni
 			      int k=0;
 // 			      std::cout << "initpop ok, iterating" << std::endl;
 			      algg.show();
-			      while(k<600){
+			      while(k<50000){
 				k++;
 				algg.iterate();
 				if(k%100 == 0){

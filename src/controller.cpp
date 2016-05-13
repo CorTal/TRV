@@ -6,7 +6,7 @@ Controller* Controller::s_controller;
 // Constructeurs
 // *************
 
-Controller::Controller()
+Controller::Controller() : slotRun(false)
 {
 
 }
@@ -315,6 +315,27 @@ std::vector< std::string > Controller::split(std::string str, char delimiter)
 void Controller::test()
 {
   map->test();
+}
+
+
+const Map* Controller::get_map() const
+{
+  return map;
+}
+
+void Controller::set_slot(bool b)
+{
+  slotRun = b;
+}
+
+void Controller::signal()
+{
+  emit sendPath();
+}
+
+bool Controller::isSlot() const
+{
+  return slotRun;
 }
 
 // ***********

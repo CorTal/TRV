@@ -8,15 +8,17 @@
 #include <iostream>
 #include "str_exception.h"
 #include "map.h"
+#include <QtGui/QtGui>
 #include <libxml++/libxml++.h>
 
 // Classe représentant le controlleur utile à la communication entre le jeu et la recherche de pathfinding 
 // Classe réalisée avec le design pattern "singleton"
-class Controller{
+class Controller : public QObject{
+  Q_OBJECT
 private:
   static Controller * s_controller; // On ne souhaite qu'il n'y ai qu'une et une seule instance de Controller 
   Map* map; // La map associé au controlleur, c'est sur celle-ci que se déroule le jeu et le pathfinding
-  
+  bool slotRun;
   // Constructeurs :
   Controller();
   Controller(Controller const & _controller);
@@ -63,6 +65,16 @@ public:
   
   // Fonction spéciale au parsing utile à la décomposition de la chaîne str par le délimiteur delimiter
   std::vector<std::string> split(std::string str, char delimiter);
+  
+  const Map* get_map() const;
+  
+  void set_slot(bool b);
+  
+  bool isSlot() const;
+  
+  void signal();
+signals:
+  void sendPath();
 };
 
 #endif

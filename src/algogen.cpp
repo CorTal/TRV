@@ -189,6 +189,7 @@ void Algogen::evaluate(SurMinion* _surminion)
 	std::vector<int> vec;
 	std::vector<float> couts;
 	std::vector<std::pair<unsigned int, unsigned int>> vec_conf;
+	std::vector<std::vector<int>> qtVec;
 	unsigned int tmps;
 	bool _vaChemin = false;
 	bool ajout = false;
@@ -278,6 +279,8 @@ void Algogen::evaluate(SurMinion* _surminion)
 	    (*it)->setManhattan(manhattan);
 	    (*it)->setGenome(genome);
 	    fitnessSM+=fitnessM;
+	    qtVec.push_back(vec);
+	    
 	}
 	fitnessSM = (float)(fitnessSM / (float) _surminion->getMinions().size());
 	_surminion->setFitness(fitnessSM);
@@ -285,11 +288,13 @@ void Algogen::evaluate(SurMinion* _surminion)
 	if (_vaCheminSM && (m_president==nullptr || !(m_president->getVaChemin()) || m_president->getFitness()>fitnessSM))
 	{
 	  m_president=_surminion;
+	  Map::m_map->changedPresident(qtVec);
 	  m_conf_pres = vec_conf;
 	}
 	else if ( !_vaCheminSM && (m_president==nullptr || (((!m_president->getVaChemin())) && (fitnessSM < m_president->getFitness()))))
 	{
 	  m_president=_surminion;
+	  Map::m_map->changedPresident(qtVec);
 	  m_conf_pres = vec_conf;
 	}
 }
