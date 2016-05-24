@@ -10,10 +10,24 @@ SurMinion::SurMinion(std::vector<Minion*> const & _minions)
   m_id=m_incrID++;
 }
 
+SurMinion::~SurMinion()
+{
+  for (unsigned int i =0; i<m_minions.size(); ++i)
+    delete m_minions.at(i);
+}
+
+
 void SurMinion::addMinion(Minion* _minion)
 {
   m_minions.push_back(_minion);
 }
+
+void SurMinion::removeMinion(unsigned int _minionNumber)
+{
+  delete *(m_minions.begin()+_minionNumber);
+  m_minions.erase(m_minions.begin()+_minionNumber);
+}
+
 
 
 const float& SurMinion::getFitness() const
@@ -41,7 +55,7 @@ Minion* SurMinion::getMinion(unsigned int _pairNumber)
   return m_minions.at(_pairNumber);
 }
 
-bool SurMinion::getVaChemin() const
+unsigned int SurMinion::getVaChemin() const
 {
   return m_vaChemin;
 }
@@ -56,7 +70,7 @@ void SurMinion::setMinions(std::vector<Minion*> const & _minions)
   m_minions=_minions;
 }
 
-void SurMinion::setVaChemin(bool _vaChemin)
+void SurMinion::setVaChemin(unsigned int _vaChemin)
 {
   m_vaChemin=_vaChemin;
 }

@@ -1,12 +1,14 @@
 #include "controller.h"
 
+std::mutex Controller::s_algomutex1, Controller::s_algomutex2;
+
 Controller* Controller::s_controller;
 
 // *************
 // Constructeurs
 // *************
 
-Controller::Controller() : slotRun(false)
+Controller::Controller():m_algg(nullptr), m_run(false),m_iteratedone(false),m_rolling(true), m_slotRun(false)
 {
 
 }
@@ -70,15 +72,78 @@ void Controller::demande_chemin_A_star(int id, int x, int y)
 	std::vector<std::pair<bool, bool>*> vec2 = map->A_star_GA(map->get_Agent(id)->getCase()->get_sommet(), map->get_Case(x,y)->get_sommet(), map->get_Agent(id)->getUnite());
 }
 
+void Controller::create_algogen()
+{
+  if(m_algg==nullptr){
+ 	unsigned int popsize=50;
+	float manhattan = 0.8;
+	float mutaRatio = 0.05;
+	float popToMutate = 0.75;
+ 	unsigned int nbAjouts = map->get_m_h();
+	float ratioSupprs = 0.01;
+	float ratioModifs = 0.1;
+	float ratioElitism = 0.05;
+	float cullRatio = 0.1;
+	unsigned int  nbkids=1;
+	m_algg = new Algogen (map->get_m_w(),map->get_m_h(),map->get_sommets(),popsize,manhattan,mutaRatio,popToMutate,nbAjouts,ratioSupprs,ratioModifs,ratioElitism,cullRatio,nbkids);
+	m_algothread=std::thread(&Controller::iterate_algogen,Controller::s_controller);
+  }else{
+    std::cerr << "Impossible de créer un nouvel algogen: il en existe déjà un" << std::endl;
+  }
+}
+
 // Fonction demandant une recherche de chemin par pathfinding génétique à l'Agent d'identificateur id à la case de coordonnées x,y
 void Controller::demande_chemin_algogen(int id, int x, int y)
 {
   if (x >= map->get_m_w() || y >= map->get_m_h())
     throw new str_exception("Cette case n'existe pas");
   else{
-	std::cout << "creation de l'algogen" << std::endl;
-	map->create_algogen(id,map->get_Case(x,y)->get_sommet(),map->get_Agent(id)->getUnite());
-	std::cout << "algogen done" << std::endl;
+    int idsource = map->get_Agent(id)->getCase()->get_sommet();
+    m_algg->addDeplacement(id, idsource,x*map->get_m_h()+y,map->get_Agent(id)->getUnite());
+    
+  }
+}
+
+void Controller::tic()
+{
+  m_run=true;
+  emit sendPath();
+}
+
+void Controller::toc()
+{
+  m_run=false;
+  while(!m_iteratedone){
+    usleep(500);
+  }
+  s_algomutex1.lock();
+  m_algg->calcSousMinions();
+  m_algg->setTmpsAct(m_algg->getTmpsAct()+1);
+  s_algomutex1.unlock();
+}
+
+std::pair< int, int > Controller::proch_case(int _idAgent)
+{
+  s_algomutex1.lock();
+  std::pair<int,int> result = m_algg->getProchCase(_idAgent);
+  s_algomutex1.unlock();
+  return result;
+}
+
+void Controller::iterate_algogen()
+{
+  while(m_rolling){
+    if(m_run){
+      m_iteratedone = false;
+      if(m_algg->getNbChemins()>0){
+	s_algomutex1.lock();
+	m_algg->iterate();
+	s_algomutex1.unlock();
+      }
+    }else{
+      usleep(1000);
+    }
+    m_iteratedone = true;
   }
 }
 
@@ -86,7 +151,13 @@ void Controller::demande_chemin_algogen(int id, int x, int y)
 // Fonction de déplacement d'agent, déplace l'Agent d'identificateur id à la case de coordonnées x,y
 void Controller::deplacement_agent(int id, int x, int y)
 {
-	map->move_agent(id, x, y);
+  map->move_agent(id, x, y);
+  s_algomutex1.lock();
+  
+  m_algg->move_agent(id,x,y);
+  s_algomutex1.unlock();
+  emit addX(x);
+  emit addY(y);
 }
 
 // Fonction permettant la création ou la suppression d'un obstacle à la case de coordonnées x,y
@@ -159,7 +230,6 @@ void Controller::initiateMap(const std::string& contentFileName)
    {
      std::cout << "Impossible d'ouvrir le fichier !" << std::endl;
    }
-   
 }
 
 void Controller::initiateRules(std::string xmlFileName)
@@ -317,6 +387,10 @@ void Controller::test()
   map->test();
 }
 
+const Algogen* Controller::get_algo() const
+{
+  return m_algg;
+}
 
 const Map* Controller::get_map() const
 {
@@ -325,18 +399,14 @@ const Map* Controller::get_map() const
 
 void Controller::set_slot(bool b)
 {
-  slotRun = b;
-}
-
-void Controller::signal()
-{
-  emit sendPath();
+  m_slotRun = b;
 }
 
 bool Controller::isSlot() const
 {
-  return slotRun;
+  return m_slotRun;
 }
+
 
 // ***********
 // Destructeur
@@ -344,7 +414,13 @@ bool Controller::isSlot() const
 
 Controller::~Controller()
 {
+  m_rolling=false;
+  m_run=false;
+  if(m_algothread.joinable()){
+    m_algothread.join();
+  }
   delete map;
+  delete m_algg;
 }
 
 void Controller::delete_controller()

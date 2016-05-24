@@ -22,7 +22,7 @@ static const uint qt_meta_data_DisplayQT[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       1,   14, // methods
+       3,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -31,12 +31,15 @@ static const uint qt_meta_data_DisplayQT[] = {
 
  // slots: signature, parameters, type, tag, flags
       11,   10,   10,   10, 0x0a,
+      31,   10,   10,   10, 0x0a,
+      46,   10,   10,   10, 0x0a,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_DisplayQT[] = {
     "DisplayQT\0\0presidentReceived()\0"
+    "XReceived(int)\0YReceived(int)\0"
 };
 
 void DisplayQT::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -46,10 +49,11 @@ void DisplayQT::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
         DisplayQT *_t = static_cast<DisplayQT *>(_o);
         switch (_id) {
         case 0: _t->presidentReceived(); break;
+        case 1: _t->XReceived((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 2: _t->YReceived((*reinterpret_cast< int(*)>(_a[1]))); break;
         default: ;
         }
     }
-    Q_UNUSED(_a);
 }
 
 const QMetaObjectExtraData DisplayQT::staticMetaObjectExtraData = {
@@ -84,9 +88,9 @@ int DisplayQT::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 1)
+        if (_id < 3)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 1;
+        _id -= 3;
     }
     return _id;
 }

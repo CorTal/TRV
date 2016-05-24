@@ -14,12 +14,12 @@
 #include "str_exception.h"
 #include "map.h"
 #include "zone.h"
-
+#include <unordered_map>
 inline bool myfonction(SurMinion *_m1, SurMinion *_m2)
 {
-      if((_m1->getVaChemin() && _m2->getVaChemin()) || (!_m1->getVaChemin() && !_m2->getVaChemin())){
+    if(_m1->getVaChemin() == _m2->getVaChemin()){
       return (_m1->getFitness()<_m2->getFitness());
-    }else if(!_m1->getVaChemin()){
+    }else if(_m1->getVaChemin() < _m2->getVaChemin()){
       return 0;
     }else{
       return 1;
@@ -30,11 +30,11 @@ class Algogen{
 
 private:
 	int m_mapW, m_mapH;  // Map width, map height
+	std::unordered_map<int, std::pair<int,int> > m_prochCases;
 	std::map<int, Case*> const * m_sommets; // Pointer to the map's tiles container
 	std::vector<Case *>m_orig,m_cible; // Pointers to the requested beginning/ending tiles
 	std::vector<SurMinion*> m_pop; // Population of individuals, each of them representing every requested paths (see class SurMinion)
 	std::vector<SousMinion*> m_sousMinions; // "sub"-individuals, representing the path taken by units to fall in line with the leader of a group
-	std::vector<const Unite*> m_unite; // Storage of unit types, used to get information about the speed and collision parameters of a type of unit
 	std::vector<Zone*>m_zones; // Contains the areas subject to falling in line behind a leader rather than finding a new path
 	SurMinion* m_president, *m_superman; // Special individuals, respectively the best individual yet (the one whose path is returned, not affected by mutations/deletions/etc) and one that is created by selecting the best paths of all individuals
 	unsigned int m_popsize, m_taillemax; // Population size and maximum genome length (!)
@@ -50,8 +50,9 @@ private:
 	float m_cullRatio; // Ratio of individuals deleted at each iteration
 	std::vector<float> m_generationTotalFitness; // Contains each iteration's global fitness, used to adapt m_ratioSupprs and m_ratioModifs
 	std::vector<std::pair<unsigned int,unsigned int>> m_conf_pres; // Container used for collision detection and subsequent genome modifications
+	unsigned int m_nbChemins,m_tmpsact;
 	
-	void initPop(int _caseSource, int _caseCible,const Unite * _typeAgent); // Creation of a new sub-population in each individual, at the request of demandeDéplacement()
+	void initPop(int _caseSource, int _caseCible, const Unite * _typeAgent, int _idAgent); // Creation of a new sub-population in each individual, at the request of demandeDéplacement()
 	
 	public:
 	Algogen(int map_w, int map_h,std::map<int, Case*> const * _sommets, unsigned int _popsize, float _manhattanImportance, float _mutationRatio, 
@@ -60,17 +61,20 @@ private:
 
 	void addDeplacement(int _idAgent, int _caseSource, int _caseCible, const Unite * _typeAgent); // Called by the map: processes a new path request.
 	void iterate(); // Main method, calling all genetic algorithm functions. This method should be called a number of times dependant on the map size.
-
+	void calcSousMinions();
 	void crossover(SurMinion* _parent0, SurMinion* _parent1, SurMinion* _parent2); // Creates new individuals based on the genome of three parents
-	Minion* crossover(Minion* _parent0, Minion* _parent1, Minion* _parent2);
 	void mutatePop(); // Mutates the population (see .cpp for details)
 	void cull(); // Destroys a number of individuals (see .cpp for details)
 	void evaluate(SurMinion* _minion); // Assigns a fitness to an individual as a whole, and to each of its paths. Corrects loops, out of bounds movements, overshootings, and also manages collisions.
 	void evaluateSSM(); // Manages collisions for sub-individuals.
 	void show() const; // prints statistics and details about the results
 	Zone *calcule_Zone(int _caseSource, int _caseCible);
-// 	unsigned int get_nb_goodResults();
-// 	unsigned int get_pres_nbdeplace();
+	
+	std::pair<int,int> getProchCase(int _agentID) const;
+	unsigned int getNbChemins();
+	unsigned int getTmpsAct();
+	void setTmpsAct(unsigned int _tmps);
+	void move_agent(int id, int x, int y);
 };
 
 #endif

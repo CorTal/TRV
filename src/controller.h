@@ -8,6 +8,7 @@
 #include <iostream>
 #include "str_exception.h"
 #include "map.h"
+#include "algogen.h"
 #include <QtGui/QtGui>
 #include <libxml++/libxml++.h>
 
@@ -16,13 +17,17 @@
 class Controller : public QObject{
   Q_OBJECT
 private:
+  static std::mutex s_algomutex1,s_algomutex2;
   static Controller * s_controller; // On ne souhaite qu'il n'y ai qu'une et une seule instance de Controller 
   Map* map; // La map associé au controlleur, c'est sur celle-ci que se déroule le jeu et le pathfinding
-  bool slotRun;
+  Algogen* m_algg;
+  bool m_slotRun;
   // Constructeurs :
   Controller();
   Controller(Controller const & _controller);
-  
+  bool m_run,m_iteratedone,m_rolling;
+  std::thread m_algothread;
+  void iterate_algogen();
   
 public:
 
@@ -51,8 +56,16 @@ public:
   // Fonction demandant une recherche de chemin par pathfinding A* à l'Agent d'identificateur id à la case de coordonnées x,y
   void demande_chemin_A_star(int id, int x, int y);
   
+  void create_algogen();
+  
   // Fonction demandant une recherche de chemin par pathfinding génétique à l'Agent d'identificateur id à la case de coordonnées x,y
   void demande_chemin_algogen(int id, int x, int y);
+  
+  void tic();
+  
+  void toc();
+  
+  std::pair<int,int> proch_case(int _idAgent);
   
   // Fonction de parsing du fichier regle.xml représentant les règles de leur jeu (description de toutes les unités, contraintes et terrains différents)
   void initiateRules(std::string xmlFileName);
@@ -63,18 +76,21 @@ public:
   // Fonction pour tester l'état de notre map
   void test();
   
+  const Algogen* get_algo() const;
+
+  const Map* get_map() const;
+
+  void set_slot(bool b);
+
+  bool isSlot() const;
+  
   // Fonction spéciale au parsing utile à la décomposition de la chaîne str par le délimiteur delimiter
   std::vector<std::string> split(std::string str, char delimiter);
   
-  const Map* get_map() const;
-  
-  void set_slot(bool b);
-  
-  bool isSlot() const;
-  
-  void signal();
 signals:
   void sendPath();
+  void addX(int);
+  void addY(int);
 };
 
 #endif

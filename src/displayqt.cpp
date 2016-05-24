@@ -10,23 +10,33 @@ using namespace std;
 //@{
 
 DisplayQT::DisplayQT(Controller* contr):
-    QWidget(), algorun(false)
+    QWidget(), algorun(false), m_x(), m_y()
 {	
     controller = contr;
     QObject::connect(contr,SIGNAL(sendPath()), this, SLOT(presidentReceived()),Qt::DirectConnection);
+    QObject::connect(contr,SIGNAL(addX(int)), this, SLOT(XReceived(int)),Qt::DirectConnection);
+    QObject::connect(contr,SIGNAL(addY(int)), this, SLOT(YReceived(int)),Qt::DirectConnection);
     buffer = new QImage;
     color = new QColor(Qt::white);
     bufferPainter= new QPainter;
     rubber = NULL;
 
-    setMinimumSize(controller->get_map()->get_m_w()*2, controller->get_map()->get_m_h()*2);
+    setMinimumSize(controller->get_map()->get_m_w()*4, controller->get_map()->get_m_h()*4);
+   
 }
 
 DisplayQT::~DisplayQT()
 {
     delete buffer;
     delete color;
-    delete bufferPainter;
+    if(!bufferPainter->isActive()){
+      delete bufferPainter;
+    }else{
+      bufferPainter->end();
+      delete bufferPainter;
+    }
+    
+    
     delete rubber;
     Controller::delete_controller();
 }
@@ -109,15 +119,9 @@ void DisplayQT::drawField()
 	std::string typeT = (*it).second->getTerrain().getType();
 
         // Cas d'une parcelle exploitable
-        if(obstacle){
-            setColor(Black);
-            drawCell((*it).second->getX(), (*it).second->getY());
-        }
+        
         // Cas d'une parcelle non exploitable
-        if(!obstacle){
-            setColor(White);
-            drawCell((*it).second->getX(), (*it).second->getY());
-        }
+
         if(typeT == "Marais"){
 	  setColor(Purple);
           drawCell((*it).second->getX(), (*it).second->getY());
@@ -130,14 +134,23 @@ void DisplayQT::drawField()
 	  setColor(LightBlue);
            drawCell((*it).second->getX(), (*it).second->getY());
 	}
-	if(typeT == "Plaine"){
-	  setColor(LightYellow);
-          drawCell((*it).second->getX(), (*it).second->getY());
+	if(typeT == "pouet"){
+	  if(obstacle){
+            setColor(Black);
+            drawCell((*it).second->getX(), (*it).second->getY());
+	  }else{
+	    setColor(LightYellow);
+	    drawCell((*it).second->getX(), (*it).second->getY());
+	  }
 	}
 	if(typeT == "Colline"){
 	  setColor(GreenKaki);
           drawCell((*it).second->getX(), (*it).second->getY());
 	}
+	if(obstacle){
+            setColor(Black);
+            drawCell((*it).second->getX(), (*it).second->getY());
+        }
 //         // Cas d'une route
 //         else if(state == is_road){
 //             setColor(Gray);
@@ -196,6 +209,8 @@ void DisplayQT::paintEvent(QPaintEvent* event)
     paint.scale(tailleCell, tailleCell);
     paint.drawImage(1, 0, *buffer);
     paint.scale(1.0/((float)tailleCell), 1.0/((float)tailleCell));
+
+
     for (unsigned x= 1; x <= (unsigned)controller->get_map()->get_m_w(); ++x) {
         float posX= x*tailleCell;
         paint.drawLine(posX, 0, posX, (controller->get_map()->get_m_h() +1)*tailleCell);
@@ -231,11 +246,7 @@ void DisplayQT::mousePressEvent(QMouseEvent* event)
 	
 	if (event->button()==Qt::LeftButton)
     {
-      if(!algorun){
-// 	controller->demande_chemin_algogen(0,90,90);
-// 	controller->get_map()->A_star_GA()
-	//algorun = true;
-      }
+
     }
 	else if (event->button()==Qt::MiddleButton)
     {}
@@ -321,29 +332,37 @@ void DisplayQT::mouseReleaseEvent(QMouseEvent* event)
 
 void DisplayQT::presidentReceived()
 {
-    controller->set_slot(true);
-    if (buffer->isNull())
-        cerr<< "Impossible de dessiner, image vide"<< endl;
-    const std::vector<std::vector<int>>* vec_dep = controller->get_map()->get_changedPresident();
-    srand(time(NULL));
-    redraw();
-     bufferPainter->begin(buffer);
-    for(std::vector<std::vector<int>>::const_iterator it = vec_dep->begin(); it != vec_dep->end() ; ++it){
-	 setColor(rand()%255,rand()%255,rand()%255);
-	 std::vector<int> minion = (*it);
-	for(std::vector<int>::const_iterator it2 = minion.begin(); it2 != minion.end();++it2){
-	  if((*it2)>=0 && (*it2) < (controller->get_map()->get_m_h() * controller->get_map()->get_m_w())){
-	  drawCell(controller->get_map()->get_Case((*it2))->getX(), controller->get_map()->get_Case((*it2))->getY());
+  if(!m_x.empty()){
+      if (buffer->isNull())
+	  cerr<< "Impossible de dessiner, image vide"<< endl;
+      redraw();
+
+      int i = 0;
+      setColor(Red);
+      while(i < m_x.size()){
+	bufferPainter->begin(buffer);
+	drawCell(m_x[i], m_y[i]);
+	bufferPainter->end();
+	++i;
       }
-	}
-      
-    }
-  
-    bufferPainter->end();
-    update();
-    controller->set_slot(false);
+      m_x.clear();
+      m_y.clear();
+      update();
+  }
+    
     
 }
+
+void DisplayQT::XReceived(int x)
+{
+   m_x.push_back(x);
+}
+
+void DisplayQT::YReceived(int y)
+{
+   m_y.push_back(y);
+}
+
 
 
 //void Display::actionReceived(int x)

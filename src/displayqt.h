@@ -43,8 +43,8 @@ private:
     long temps;
     bool running;
     bool algorun;
-    
-
+    std::vector<int> m_x;
+    std::vector<int> m_y;
 private:
     void initRubber(QMouseEvent* event);
     void initMap();
@@ -133,6 +133,10 @@ public slots:
      * @param x Identifiant de l'action reçue
      */
     void presidentReceived();
+    
+    void XReceived(int);
+    
+    void YReceived(int);
 
 //signals:
 //    /**
