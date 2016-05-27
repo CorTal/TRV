@@ -75,6 +75,7 @@ private:
 	unsigned int getTmpsAct();
 	void setTmpsAct(unsigned int _tmps);
 	void move_agent(int id, int x, int y);
+	float calc_fit_obs(unsigned int _cible, int _sommet);
 };
 
 #endif

@@ -1,5 +1,7 @@
 #include "algogen.h"
 
+#define LOGS 1
+
 Algogen::Algogen(int map_w, int map_h, const std::map< int, Case* >* _sommets, unsigned int _popsize, float _manhattanImportance, float _mutationRatio, float _popToMutate, unsigned int _nbAjouts, float _ratioSupprs, float _ratioModifs, float _ratioElitism, float _cullRatio, unsigned int _nbkids):
 m_president(nullptr),m_superman(nullptr),m_ratioElitism(_ratioElitism),m_tmpsact(0)
 {
@@ -77,7 +79,7 @@ void Algogen::initPop(int _caseSource, int _caseCible, const Unite* _typeAgent, 
 	  genome.clear();
 	}
       } // Once all three A* path definitions have been attempted...
-      std::cout << "all Astar done" << std::endl;
+//       std::cout << "all Astar done" << std::endl;
       Astar=false;
       if(!Astar){
 	for(int j=0;j<6;++j){ // We create the rest of the individuals by assigning them 6 random movements
@@ -176,7 +178,6 @@ void Algogen::mutatePop()
       unsigned int nbrMinionsToMutate = m_pop.front()->getMinions().size();
       std::vector<Minion*> minions = SM->getMinions();
       for(unsigned int i = 0; i < nbrMinionsToMutate; ++i){
-// 	unsigned int minionToMutate = rand()%(minions.size());
 	unsigned int minionToMutate = i;
 	std::swap(*(minions.begin()+minionToMutate),minions.back());
 	minions.pop_back();
@@ -294,19 +295,18 @@ void Algogen::evaluate(SurMinion* _surminion)
 	    int manhattan = 0.0;
 	    if (genome.size()==0)
 	    {
-		std::cout << "YOOOOOOOOOOOOOOOOOOOOOOOOO0" << std::endl;
 		canBe=false;
 	    }
 	    if(_vaChemin){
-// 	      std::cout << "Vachemin trouvé pour le minion n° " << (it - minions.begin()) << std::endl;;
 	      ++_vaCheminSM;
-	      fitnessM = (float)((float)cout + (float)genome.size());
+	      int nb_obst = calc_fit_obs(m_cible.at(numAgent)->get_sommet(), vec.back());
+	      fitnessM = (float)((float)cout + (float)genome.size()) + nb_obst;
 	    }else{
-	      int manhattan = abs(m_cible.at(numAgent)->getX() - m_sommets->at(vec.back())->getX()) + abs(m_cible.at(numAgent)->getY() - m_sommets->at(vec.back())->getY());
-	      fitnessM = ((float)manhattan*m_manhattanImportance);
+	      int manhattanC = abs(m_cible.at(numAgent)->getX() - m_sommets->at(vec.back())->getX()) + abs(m_cible.at(numAgent)->getY() - m_sommets->at(vec.back())->getY());
+	      int manhattanS = abs(m_orig.at(numAgent)->getX() - m_sommets->at(vec.back())->getX()) + abs(m_orig.at(numAgent)->getY() - m_sommets->at(vec.back())->getY());
+// 	      float nb_obst=calc_fit_obs(m_cible.at(numAgent)->get_sommet(), vec.back());
+	      fitnessM = (float)((float)manhattanC - (float)manhattanS);
 	    }
-	    if (genome.size() ==0)
-	      fitnessM += 100000000000;
 	    (*it)->setFitness(fitnessM);
 	    (*it)->setManhattan(manhattan);
 	    (*it)->setGenome(genome);
@@ -315,24 +315,16 @@ void Algogen::evaluate(SurMinion* _surminion)
 	fitnessSM = (float)(fitnessSM / (float) _surminion->getMinions().size());
 	_surminion->setFitness(fitnessSM);
 	_surminion->setVaChemin(_vaCheminSM);
-	if (canBe && (_vaCheminSM==m_nbChemins) && (m_president==nullptr || (m_president->getVaChemin()<_vaCheminSM) || m_president->getFitness()>fitnessSM))
+	if ((canBe && (_vaCheminSM==m_nbChemins) && (m_president==nullptr || (m_president->getVaChemin()<_vaCheminSM) || m_president->getFitness()>fitnessSM)) || (m_president!=nullptr && canBe && m_president->cheminNul()) )
 	{
-	  for (unsigned int l=0; l<_surminion->getMinions().size(); ++l)
-	  {
-	    std::cout << "Le nouveau président à un minion de taille : " << _surminion->getMinion(l)->getGenomeSize() << std::endl;
-	  }
 	  m_president=_surminion;
 	  m_conf_pres = vec_conf;
 	}
-	else if ( canBe && _vaCheminSM!=m_nbChemins && 
+	else if ((canBe && _vaCheminSM!=m_nbChemins && 
 	  (m_president==nullptr || 
 	  (m_president->getVaChemin()<_vaCheminSM) || 
-	  ((m_president->getFitness()>fitnessSM) && m_president->getVaChemin()==_vaCheminSM)))
+	  ((m_president->getFitness()>fitnessSM) && m_president->getVaChemin()==_vaCheminSM))) || (m_president!=nullptr && canBe && m_president->cheminNul()) )
 	{
-	  for (unsigned int l=0; l<_surminion->getMinions().size(); ++l)
-	  {
-	    std::cout << "Le nouveau président à un minion de taille : " << _surminion->getMinion(l)->getGenomeSize() << std::endl;
-	  }
 	  m_president=_surminion;
 	  m_conf_pres = vec_conf;
 	}
@@ -411,13 +403,13 @@ void Algogen::evaluateSSM() // A MODIFIER POUR QUE CA FASSE EN DEUX PARTIES: SUR
 void Algogen::iterate()
 {
     mutatePop();
-//     if(m_nbIterations>2 && m_generationTotalFitness.back() > m_generationTotalFitness.at(m_generationTotalFitness.size()-2) - 1){  
-//       m_ratioSupprs = m_ratioSupprs * 0.99;
-//       m_ratioModifs = m_ratioModifs * 0.99;
-//     }else if(m_ratioModifs < 2*m_initratioModifs){
-//       m_ratioSupprs = m_ratioSupprs * 1.01;
-//       m_ratioModifs = m_ratioModifs * 1.01;
-//     }
+    if(m_nbIterations>2 && m_generationTotalFitness.back() > m_generationTotalFitness.at(m_generationTotalFitness.size()-2) - 1){  
+      m_ratioSupprs = m_ratioSupprs * 0.99;
+      m_ratioModifs = m_ratioModifs * 0.99;
+    }else if(m_ratioModifs < 2*m_initratioModifs){
+      m_ratioSupprs = m_ratioSupprs * 1.01;
+      m_ratioModifs = m_ratioModifs * 1.01;
+    }
     SurMinion *sm1=nullptr, *sm2=nullptr, *sm3=nullptr;
     while(m_pop.size()<m_popsize){		// reproduction par rank selection exponentielle tant que la population n'a pas atteint m_popsize
       for (unsigned int i = 1 ;i<m_pop.size();++i){			// probabilité de sélection: 1/2 pour le meilleur individu, 1/4, pour le suivant, 1/8 pour le 3me...
@@ -594,9 +586,7 @@ void Algogen::calcSousMinions()
   evaluateSSM();
   unsigned int nbminions=m_president->getNumberMinions();
   for(unsigned int i=0;i<nbminions;++i){
-    std::cout << "av taille minion : " << m_president->getMinion(i)->getGenomeSize() << std::endl;
     std::pair<bool,bool> const * depl = m_president->getMinion(i)->getChromosome(0);
-    std::cout << "ap" << std::endl;
     if(depl!=nullptr){
       m_prochCases[m_president->getMinion(i)->getIDAgent()]=std::pair<int,int>(m_orig[i]->getX() + depl->second*(1-(2*depl->first)), m_orig[i]->getY() + ((depl->second -1) * ((2*depl->first)-1)));
     }
@@ -691,4 +681,28 @@ void Algogen::setTmpsAct(unsigned int _tmps)
   m_tmpsact=_tmps;
 }
 
+float Algogen::calc_fit_obs(unsigned int _cible, int _sommet)
+{
+  float nb_case=0;
+  float nb_obs=0;
+  unsigned int cx = m_sommets->at(_cible)->getX();
+  unsigned int cy = m_sommets->at(_cible)->getY();
+  unsigned int sx = m_sommets->at(_sommet)->getX();
+  unsigned int sy = m_sommets->at(_sommet)->getY();
+  while ( (sx!=cx) && (sy!=cy) )
+  {
+    nb_case++;
+    if (m_sommets->at(sx*m_mapH+sy)->isObstacle())
+      nb_obs++;
+    if (sx < cx)
+      sx++;
+    else if (sx > cx)
+      sx--;
+    if (sy < cy)
+      sy++;
+    else if (sy > cy)
+      sy--;
+  }
+  return nb_obs;
+}
 

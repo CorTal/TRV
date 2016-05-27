@@ -8,7 +8,7 @@ Controller* Controller::s_controller;
 // Constructeurs
 // *************
 
-Controller::Controller():m_algg(nullptr), m_run(false),m_iteratedone(false),m_rolling(true), m_slotRun(false)
+Controller::Controller():m_algg(nullptr), m_run(false),m_iteratedone(false),m_rolling(true), m_slotRun(false), m_orig(), m_end()
 {
 
 }
@@ -79,12 +79,12 @@ void Controller::create_algogen()
 	float manhattan = 0.8;
 	float mutaRatio = 0.05;
 	float popToMutate = 0.75;
- 	unsigned int nbAjouts = map->get_m_h();
+ 	unsigned int nbAjouts = map->get_m_h() + map->get_m_w();
 	float ratioSupprs = 0.01;
 	float ratioModifs = 0.1;
 	float ratioElitism = 0.05;
 	float cullRatio = 0.1;
-	unsigned int  nbkids=1;
+	unsigned int  nbkids=3;
 	m_algg = new Algogen (map->get_m_w(),map->get_m_h(),map->get_sommets(),popsize,manhattan,mutaRatio,popToMutate,nbAjouts,ratioSupprs,ratioModifs,ratioElitism,cullRatio,nbkids);
 	m_algothread=std::thread(&Controller::iterate_algogen,Controller::s_controller);
   }else{
@@ -99,6 +99,8 @@ void Controller::demande_chemin_algogen(int id, int x, int y)
     throw new str_exception("Cette case n'existe pas");
   else{
     int idsource = map->get_Agent(id)->getCase()->get_sommet();
+    m_orig.push_back(idsource);
+    m_end.push_back(id);
     m_algg->addDeplacement(id, idsource,x*map->get_m_h()+y,map->get_Agent(id)->getUnite());
     
   }
@@ -407,6 +409,15 @@ bool Controller::isSlot() const
   return m_slotRun;
 }
 
+const std::vector< int >& Controller::get_end() const
+{
+  return m_end;
+}
+
+const std::vector< int >& Controller::get_orig() const
+{
+  return m_orig;
+}
 
 // ***********
 // Destructeur
@@ -427,4 +438,5 @@ void Controller::delete_controller()
 {
   delete s_controller;
 }
+
 

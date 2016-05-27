@@ -113,7 +113,9 @@ void DisplayQT::drawField()
     if (buffer->isNull())
         cerr<< "Impossible de dessiner, image vide"<< endl;
     bufferPainter->begin(buffer);
+    
     const std::map<int, Case*>* cases= controller->get_map()->get_sommets();
+    
     for(std::map<int,Case*>::const_iterator it = cases->begin(); it != cases->end() ; ++it){
         bool obstacle = (*it).second->isObstacle();
 	std::string typeT = (*it).second->getTerrain().getType();
@@ -134,7 +136,7 @@ void DisplayQT::drawField()
 	  setColor(LightBlue);
            drawCell((*it).second->getX(), (*it).second->getY());
 	}
-	if(typeT == "pouet"){
+	if(typeT == "terrain"){
 	  if(obstacle){
             setColor(Black);
             drawCell((*it).second->getX(), (*it).second->getY());
@@ -167,7 +169,23 @@ void DisplayQT::drawField()
 //             drawCell((*it).getX(), (*it).getY());
 //         }
     }
-  
+    const std::vector<int> orig = controller->get_orig();
+    const std::vector<int> end = controller->get_end();
+    int i = 0;
+    int R = 0;
+    int G = 0;
+    int B = 0;
+    for(std::vector<int>::const_iterator it = orig.begin(); it!= orig.end(); ++it)
+    {
+      setColor(R,G,B);
+      R+=50;
+      G+=50;
+      B+=50;
+      drawCell(controller->get_map()->get_Case((*it))->getX(),controller->get_map()->get_Case((*it))->getY());
+      drawCell(controller->get_map()->get_Case(end[i])->getX(),controller->get_map()->get_Case(end[i])->getY());
+      ++i;
+    }
+    algorun = true;
     bufferPainter->end();
 }
 
@@ -209,7 +227,8 @@ void DisplayQT::paintEvent(QPaintEvent* event)
     paint.scale(tailleCell, tailleCell);
     paint.drawImage(1, 0, *buffer);
     paint.scale(1.0/((float)tailleCell), 1.0/((float)tailleCell));
-
+    
+   
 
     for (unsigned x= 1; x <= (unsigned)controller->get_map()->get_m_w(); ++x) {
         float posX= x*tailleCell;
@@ -335,11 +354,27 @@ void DisplayQT::presidentReceived()
   if(!m_x.empty()){
       if (buffer->isNull())
 	  cerr<< "Impossible de dessiner, image vide"<< endl;
-      redraw();
+      //redraw();
 
-      int i = 0;
-      setColor(Red);
+      unsigned int i = 0;
+      int cpt = 0;
       while(i < m_x.size()){
+	if(cpt == 0){
+	  setColor(Red);
+	} else if (cpt == 1)
+	{
+	  setColor(255,20,147);
+	} else if (cpt == 2)
+	{
+	  setColor(0,0,255);
+	}else if (cpt == 3)
+	{
+	  setColor(Green);
+	}else if (cpt == 4)
+	{
+	  setColor(139,69,19);
+	}
+	cpt++;
 	bufferPainter->begin(buffer);
 	drawCell(m_x[i], m_y[i]);
 	bufferPainter->end();

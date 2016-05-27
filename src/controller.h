@@ -21,13 +21,14 @@ private:
   static Controller * s_controller; // On ne souhaite qu'il n'y ai qu'une et une seule instance de Controller 
   Map* map; // La map associé au controlleur, c'est sur celle-ci que se déroule le jeu et le pathfinding
   Algogen* m_algg;
-  bool m_slotRun;
   // Constructeurs :
   Controller();
   Controller(Controller const & _controller);
   bool m_run,m_iteratedone,m_rolling;
+  bool m_slotRun;
   std::thread m_algothread;
   void iterate_algogen();
+  std::vector<int> m_orig,m_end;
   
 public:
 
@@ -79,6 +80,9 @@ public:
   const Algogen* get_algo() const;
 
   const Map* get_map() const;
+  
+  const std::vector<int>& get_orig() const;
+  const std::vector<int>& get_end() const;
 
   void set_slot(bool b);
 
