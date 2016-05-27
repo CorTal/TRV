@@ -589,12 +589,16 @@ void Algogen::calcSousMinions()
     std::pair<bool,bool> const * depl = m_president->getMinion(i)->getChromosome(0);
     if(depl!=nullptr){
       m_prochCases[m_president->getMinion(i)->getIDAgent()]=std::pair<int,int>(m_orig[i]->getX() + depl->second*(1-(2*depl->first)), m_orig[i]->getY() + ((depl->second -1) * ((2*depl->first)-1)));
+    }else{
+      m_prochCases[m_president->getMinion(i)->getIDAgent()]=std::pair<int,int>(m_orig[i]->getX(), m_orig[i]->getY());
     }
   }
   for(unsigned int i=0;i<m_sousMinions.size();++i){
     std::pair<bool,bool> const * depl = m_sousMinions[i]->getChromosome(0);
     if(depl!=nullptr){
       m_prochCases[m_sousMinions[i]->getID()]=std::pair<int,int>(m_sommets->at(m_sousMinions[i]->getCaseSource())->getX() + depl->second*(1-(2*depl->first)), m_sommets->at(m_sousMinions[i]->getCaseSource())->getY()+ ((depl->second -1) * ((2*depl->first)-1)));
+    }else{
+      m_prochCases[m_sousMinions[i]->getID()]=std::pair<int,int>(m_sommets->at(m_sousMinions[i]->getCaseSource())->getX(),m_sommets->at(m_sousMinions[i]->getCaseSource())->getY());
     }
   }
 }

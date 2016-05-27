@@ -100,7 +100,7 @@ void Controller::demande_chemin_algogen(int id, int x, int y)
   else{
     int idsource = map->get_Agent(id)->getCase()->get_sommet();
     m_orig.push_back(idsource);
-    m_end.push_back(id);
+    m_end.push_back(x*map->get_m_h()+y);
     m_algg->addDeplacement(id, idsource,x*map->get_m_h()+y,map->get_Agent(id)->getUnite());
     
   }
@@ -118,7 +118,7 @@ void Controller::toc()
   while(!m_iteratedone){
     usleep(500);
   }
-  s_algomutex1.lock();
+  s_algomutex1.try_lock();
   m_algg->calcSousMinions();
   m_algg->setTmpsAct(m_algg->getTmpsAct()+1);
   s_algomutex1.unlock();

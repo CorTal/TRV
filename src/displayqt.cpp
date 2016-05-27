@@ -20,7 +20,7 @@ DisplayQT::DisplayQT(Controller* contr):
     color = new QColor(Qt::white);
     bufferPainter= new QPainter;
     rubber = NULL;
-
+  srand(time(NULL));
     setMinimumSize(controller->get_map()->get_m_w()*4, controller->get_map()->get_m_h()*4);
    
 }
@@ -169,22 +169,7 @@ void DisplayQT::drawField()
 //             drawCell((*it).getX(), (*it).getY());
 //         }
     }
-    const std::vector<int> orig = controller->get_orig();
-    const std::vector<int> end = controller->get_end();
-    int i = 0;
-    int R = 0;
-    int G = 0;
-    int B = 0;
-    for(std::vector<int>::const_iterator it = orig.begin(); it!= orig.end(); ++it)
-    {
-      setColor(R,G,B);
-      R+=50;
-      G+=50;
-      B+=50;
-      drawCell(controller->get_map()->get_Case((*it))->getX(),controller->get_map()->get_Case((*it))->getY());
-      drawCell(controller->get_map()->get_Case(end[i])->getX(),controller->get_map()->get_Case(end[i])->getY());
-      ++i;
-    }
+    
     algorun = true;
     bufferPainter->end();
 }
@@ -351,7 +336,9 @@ void DisplayQT::mouseReleaseEvent(QMouseEvent* event)
 
 void DisplayQT::presidentReceived()
 {
+  
   if(!m_x.empty()){
+    bufferPainter->begin(buffer);
       if (buffer->isNull())
 	  cerr<< "Impossible de dessiner, image vide"<< endl;
       //redraw();
@@ -375,13 +362,29 @@ void DisplayQT::presidentReceived()
 	  setColor(139,69,19);
 	}
 	cpt++;
-	bufferPainter->begin(buffer);
+	
 	drawCell(m_x[i], m_y[i]);
-	bufferPainter->end();
+	
 	++i;
       }
+      
       m_x.clear();
       m_y.clear();
+  
+     const std::vector<int> orig = controller->get_orig();
+    const std::vector<int> end = controller->get_end();
+    i = 0;
+
+   
+    setColor(rand()%255,rand()%255,rand()%255);
+    for(std::vector<int>::const_iterator it = orig.begin(); it!= orig.end(); ++it)
+    {
+      
+      drawCell(controller->get_map()->get_Case((*it))->getX(),controller->get_map()->get_Case((*it))->getY());
+      drawCell(controller->get_map()->get_Case(end[i])->getX(),controller->get_map()->get_Case(end[i])->getY());
+      ++i;
+    }
+    bufferPainter->end();
       update();
   }
     
